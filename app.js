@@ -1,183 +1,161 @@
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+// SUPABASE CONNECTION
+const SUPABASE_URL = "https://ewzhfhaqcqrmvkfwldwp.supabase.co";
+const SUPABASE_KEY = "PASTE_YOUR_PUBLISHABLE_KEY_HERE";
 
-:root {
-  --red: #e50914;
-  --black: #111111;
-  --white: #ffffff;
-  --light: #f5f5f5;
-  --gray: #777777;
-}
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+window.supabase = supabase;
 
-body {
-  font-family: Arial, sans-serif;
-  background: var(--light);
-  color: var(--black);
-}
+// DATA
+let products = [];
+let cart = [];
 
-header {
-  background: var(--black);
-  color: var(--white);
-  padding: 18px 5%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 15px;
-}
+// LOAD PRODUCTS
+async function loadProducts() {
+  const { data, error } = await supabase
+    .from("products")
+    .select("*");
 
-.logo {
-  color: var(--red);
-  font-size: 27px;
-  font-weight: bold;
-}
-
-nav {
-  display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
-nav a {
-  color: white;
-  text-decoration: none;
-  font-weight: bold;
-}
-
-nav a:hover {
-  color: var(--red);
-}
-
-button {
-  background: var(--red);
-  color: white;
-  border: none;
-  padding: 12px 20px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-button:hover {
-  background: #b9000a;
-}
-
-.search-section {
-  padding: 25px 5%;
-  background: white;
-  display: flex;
-  gap: 10px;
-}
-
-.search-section input {
-  flex: 1;
-  min-width: 0;
-  padding: 14px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 16px;
-}
-
-.section {
-  padding: 30px 5%;
-}
-
-.section h2,
-.cart-section h2 {
-  margin-bottom: 20px;
-  border-left: 5px solid var(--red);
-  padding-left: 12px;
-}
-
-.categories,
-.products {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 18px;
-}
-
-.category-card,
-.product-card {
-  background: white;
-  border-radius: 10px;
-  padding: 15px;
-  text-align: center;
-  box-shadow: 0 2px 12px #00000010;
-}
-
-.category-card {
-  cursor: pointer;
-  font-weight: bold;
-}
-
-.product-card img {
-  width: 100%;
-  height: 170px;
-  object-fit: contain;
-  margin-bottom: 12px;
-}
-
-.product-card h3 {
-  font-size: 17px;
-  margin-bottom: 8px;
-}
-
-.price {
-  color: var(--red);
-  font-size: 19px;
-  font-weight: bold;
-  margin: 10px 0;
-}
-
-.cart-section {
-  background: white;
-  padding: 25px 5%;
-}
-
-.cart-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 0;
-  border-bottom: 1px solid #ddd;
-}
-
-footer {
-  background: var(--black);
-  color: white;
-  text-align: center;
-  padding: 30px 15px;
-  margin-top: 30px;
-}
-
-footer p {
-  margin: 8px;
-}
-
-@media (max-width: 600px) {
-  header {
-    justify-content: center;
-    text-align: center;
+  if (error) {
+    document.getElementById("productList").textContent =
+      "Products loading failed: " + error.message;
+    return;
   }
 
-  nav {
-    justify-content: center;
-  }
-
-  .search-section {
-    padding: 15px;
-  }
-
-  .section {
-    padding: 22px 15px;
-  }
-
-  .product-card img {
-    height: 130px;
-  }
+  products = data || [];
+  displayProducts(products);
 }
+
+// DISPLAY PRODUCTS
+function displayProducts(items) {
+  const list = document.getElementById("productList");
+
+  if (!items.length) {
+    list.textContent = "No products available yet.";
+    return;
+  }
+
+  list.innerHTML = items.map(p => `
+    <div class="product-card">
+      <img src="${p.image_url || p.image || 'https://placehold.co/300x200?text=Product'}"
+           alt="Product">
+      <h3>${p.name_bn || p.name || p.title || "Product"}</h3>
+      <p class="price">৳${p.price ?? 0}</p>
+      <button onclick="addToCart('${p.id}')">
+        Add to Cart
+      </button>
+    </div>
+  `).join("");
+}
+
+// LOAD CATEGORIES
+async function loadCategories() {
+  const { data, error } = await supabase
+    .from("categories")
+    .select("*");
+
+  const list = document.getElementById("categoryList");
+
+  if (error) {
+    list.textContent = "Categories loading failed.";
+    return;
+  }
+
+  if (!data || !data.length) {
+    list.textContent = "No categories available yet.";
+    return;
+  }
+
+  list.innerHTML = data.map(c => `
+    <div class="category-card">
+      ${c.name_bn || c.name || c.title || "Category"}
+    </div>
+  `).join("");
+}
+
+// SEARCH PRODUCTS
+window.searchProducts = function() {
+  const query = document
+    .getElementById("searchInput")
+    .value.toLowerCase();
+
+  const results = products.filter(p =>
+    String(p.name || "").toLowerCase().includes(query) ||
+    String(p.name_bn || "").toLowerCase().includes(query)
+  );
+
+  displayProducts(results);
+};
+
+// ADD TO CART
+window.addToCart = function(id) {
+  const product = products.find(p => String(p.id) === String(id));
+  if (!product) return;
+
+  const existing = cart.find(item => String(item.id) === String(id));
+
+  if (existing) {
+    existing.quantity++;
+  } else {
+    cart.push({ ...product, quantity: 1 });
+  }
+
+  displayCart();
+};
+
+// DISPLAY CART
+function displayCart() {
+  const list = document.getElementById("cartItems");
+  const totalElement = document.getElementById("cartTotal");
+
+  if (!cart.length) {
+    list.textContent = "Your cart is empty.";
+    totalElement.textContent = "Total: ৳0";
+    return;
+  }
+
+  list.innerHTML = cart.map(item => `
+    <div class="cart-item">
+      <span>${item.name_bn || item.name || "Product"}</span>
+      <span>৳${item.price} × ${item.quantity}</span>
+      <button onclick="removeFromCart('${item.id}')">Remove</button>
+    </div>
+  `).join("");
+
+  const total = cart.reduce(
+    (sum, item) => sum + Number(item.price || 0) * item.quantity,
+    0
+  );
+
+  totalElement.textContent = "Total: ৳" + total;
+}
+
+// REMOVE FROM CART
+window.removeFromCart = function(id) {
+  cart = cart.filter(item => String(item.id) !== String(id));
+  displayCart();
+};
+
+// LOGIN PLACEHOLDER
+window.showLogin = function() {
+  alert("Login and Signup system will be added next.");
+};
+
+// CHECKOUT PLACEHOLDER
+window.checkout = function() {
+  if (!cart.length) {
+    alert("Your cart is empty!");
+    return;
+  }
+
+  alert("Checkout system will be activated after customer login and order security setup.");
+};
+
+// START WEBSITE
+loadProducts();
+loadCategories();
+displayCart();
+
+console.log("Your Shopping App Started");
+                                  
