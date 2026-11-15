@@ -1,1 +1,57 @@
 
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Shopping</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <div class="logo">YOUR SHOPPING</div>
+  <nav>
+    <a href="#">Home</a>
+    <a href="#categories">Categories</a>
+    <a href="#products">Products</a>
+    <a href="#cart">Cart</a>
+  </nav>
+  <button onclick="showLogin()">Login</button>
+</header>
+
+<section class="search-section">
+  <input id="searchInput" type="search" placeholder="পণ্য খুঁজুন / Search products...">
+  <button onclick="searchProducts()">Search</button>
+</section>
+
+<section class="section" id="categories">
+  <h2>Product Categories</h2>
+  <div class="categories" id="categoryList">
+    <p>Loading categories...</p>
+  </div>
+</section>
+
+<section class="section" id="products">
+  <h2>Our Products</h2>
+  <div class="products" id="productList">
+    <p>Loading products...</p>
+  </div>
+</section>
+
+<section class="cart-section" id="cart">
+  <h2>Shopping Cart</h2>
+  <div id="cartItems">Your cart is empty.</div>
+  <h3 id="cartTotal">Total: ৳0</h3>
+  <button onclick="checkout()">Checkout</button>
+</section>
+
+<footer>
+  <h2>YOUR SHOPPING</h2>
+  <p>আপনার বিশ্বস্ত অনলাইন শপিং প্ল্যাটফর্ম</p>
+  <p>© 2026 Your Shopping. All Rights Reserved.</p>
+</footer>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
